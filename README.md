@@ -1,1 +1,1 @@
-Navigat to the root directory of the project and run `npm start`. React app will run at localhost:3000
+Navigat to project directory and run `npm start`. React app will be running at localhost:3000

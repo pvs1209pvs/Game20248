@@ -64,7 +64,7 @@ const styles = {
   }
 }
 
-function makeBlankBoard() {
+function getEmptyGrid() {
 	return Array(SIZE)
 		.fill(null)
 		.map(() => Array(SIZE).fill(0))
@@ -74,31 +74,31 @@ function getRandomInt(max) {
 	return Math.floor(Math.random() * max)
 }
 
-function makeBoardCopy(board) {
-	return board.map(row => [...row])
+function cloneGrid(grid) {
+	return grid.map(row => [...row])
 };
 
-const addRandomTile = (board) => {
+const addRandomTile = (grid) => {
 
-	const zeroTiles = [];
+	const emptyCells = [];
 
 	// grab all the non empty tiles
 	for (let i = 0; i < SIZE; i++) {
 		for (let j = 0; j < SIZE; j++) {
-			if (board[i][j] === 0) zeroTiles.push([i, j])
+			if (grid[i][j] === 0) emptyCells.push([i, j])
 		}
 	}
 
-	if (zeroTiles.length === 0) return board;
+	if (emptyCells.length === 0) return grid;
 	// add a 2 or a 4 to any one of the empty tiles
-	const [i, j] = zeroTiles[getRandomInt(zeroTiles.length)]
-	board[i][j] = Math.random() < 0.9 ? 2 : 4
+	const [i, j] = emptyCells[getRandomInt(emptyCells.length)]
+	grid[i][j] = Math.random() < 0.9 ? 2 : 4
 
-	return board
+	return grid
 
 };
 
-function rotateBoard(board) {
+function rotateGrid(grid) {
 
 	const newGrid = [];
 
@@ -107,7 +107,7 @@ function rotateBoard(board) {
 		const newRow = [];
 
 		for (let row = 0; row < SIZE; row++) {
-			newRow.push(board[row][col]);
+			newRow.push(grid[row][col]);
 
 		}
 
@@ -120,11 +120,11 @@ function rotateBoard(board) {
 
 }
 
-function mergeBoardTiles(board) {
+function mergeGrid(grid) {
 
 	let moved = false;
 
-	const newBoard = board.map(row => {
+	const newGrid = grid.map(row => {
 
 		// Get non-zere tiles
 		const newRow = row.filter(tile => tile !== 0);
@@ -155,82 +155,82 @@ function mergeBoardTiles(board) {
 
 	});
 
-	return { newBoard, moved }
+	return { newGrid, moved }
 
 }
 
-function initBoardState() {
-	return addRandomTile(addRandomTile(makeBlankBoard()))
+function initGameState() {
+	return addRandomTile(addRandomTile(getEmptyGrid()))
 }
 export function Game2048() {
 
-	const [gameBoard, setGameBoard] = useState(initBoardState());
-	const [isGameOver, setIsGameOver] = useState(false);
+	const [grid, setGrid] = useState(initGameState());
+	const [gameOver, setGameOver] = useState(false);
 
 	function onRestartClick(){
-		setGameBoard(initBoardState())
+		setGrid(initGameState())
 	}
 
 	const handleKeyDown = (e) => {
 
-		if (isGameOver) return;
+		if (gameOver) return;
 
 		let rotated = false;
-		let tempGrid = makeBoardCopy(gameBoard);
+		let tempGrid = cloneGrid(grid);
 
 		// Rotate grid to avoid repeating same code again and again
 		if (e.key === "ArrowUp") {
-			tempGrid = rotateBoard(rotateBoard(rotateBoard(tempGrid)));
+			tempGrid = rotateGrid(rotateGrid(rotateGrid(tempGrid)));
 			rotated = true;
 		} else if (e.key === "ArrowDown") {
-			tempGrid = rotateBoard(tempGrid);
+			tempGrid = rotateGrid(tempGrid);
 			rotated = true;
 		} else if (e.key === "ArrowRight") {
-			tempGrid = rotateBoard(rotateBoard(tempGrid));
+			tempGrid = rotateGrid(rotateGrid(tempGrid));
 			rotated = true;
 		} else if (e.key !== "ArrowLeft") {
 			// do not take action if any other key was pressed
 			return;
 		}
 
-		const { newGrid, moved } = mergeBoardTiles(tempGrid);
+		const { newGrid, moved } = mergeGrid(tempGrid);
 
 		let finalGrid = newGrid;
 
 		// rotate it back to its originan orientation
 		if (rotated) {
 			const rotations = { "ArrowUp": 1, "ArrowDown": 3, "ArrowRight": 2 };
-			for (let i = 0; i < rotations[e.key]; i++) finalGrid = rotateBoard(finalGrid);
+			for (let i = 0; i < rotations[e.key]; i++) finalGrid = rotateGrid(finalGrid);
 		}
 
 		if (moved) {
 			// merge mergeable tiles
-			setGameBoard(addRandomTile(finalGrid));
+			setGrid(addRandomTile(finalGrid));
 		} else {
 			// check if any more moves are left
 			const canMove = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].some(dir => {
-				let testGrid = makeBoardCopy(gameBoard);
+				let testGrid = cloneGrid(grid);
 
-				if (dir === "ArrowUp") testGrid = rotateBoard(rotateBoard(rotateBoard(testGrid)));
-				if (dir === "ArrowDown") testGrid = rotateBoard(testGrid);
-				if (dir === "ArrowRight") testGrid = rotateBoard(rotateBoard(testGrid));
+				if (dir === "ArrowUp") testGrid = rotateGrid(rotateGrid(rotateGrid(testGrid)));
+				if (dir === "ArrowDown") testGrid = rotateGrid(testGrid);
+				if (dir === "ArrowRight") testGrid = rotateGrid(rotateGrid(testGrid));
 
-				const { moved: canMove } = mergeBoardTiles(testGrid);
+				const { moved: canMove } = mergeGrid(testGrid);
 
 				return canMove;
 
 			});
-			if (!canMove) setIsGameOver(true);
+			if (!canMove) setGameOver(true);
 		}
 	};
 
 	useEffect(() => {
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [gameBoard, isGameOver]);
+	}, [grid, gameOver]);
 
-	function getCellStyle(titeValue) {
-		switch (titeValue) {
+	function getCellStyle(value) {
+		switch (value) {
 			case 2: return { ...styles.cell, ...styles.cell2 };
 			case 4: return { ...styles.cell, ...styles.cell4 };
 			case 8: return { ...styles.cell, ...styles.cell8 };
@@ -251,11 +251,11 @@ export function Game2048() {
 
 			<h1 style={styles.title}>2048 Game by Paramvir Singh</h1>
 			
-			{isGameOver && <h2 style={styles.gameOver}>Game Over!</h2>}
+			{gameOver && <h2 style={styles.gameOver}>Game Over!</h2>}
 			
 			<table style={styles.table}>
 				<tbody>
-					{gameBoard.map((row, i) => (
+					{grid.map((row, i) => (
 						<tr key={i}>
 							{row.map((cell, j) => (
 								<td key={j} style={getCellStyle(cell)}>

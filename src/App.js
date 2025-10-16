@@ -47,6 +47,21 @@ const styles = {
 	cell512: { background: "#edc850", color: "#f9f6f2" },
 	cell1024: { background: "#edc53f", color: "#f9f6f2" },
 	cell2048: { background: "#edc22e", color: "#f9f6f2" },
+	  button: {
+    padding: "10px 20px",
+    marginTop: "20px",
+    fontSize: "1rem",
+    fontWeight: "bold",
+    color: "#fff",
+    backgroundColor: "#8f7a66",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+  },
+  buttonHover: {
+    backgroundColor: "#9f8b76",
+  }
 }
 
 function getEmptyGrid() {
@@ -73,12 +88,12 @@ const addRandomTile = (grid) => {
 			if (grid[i][j] === 0) emptyCells.push([i, j])
 		}
 	}
-	
+
 	if (emptyCells.length === 0) return grid;
 	// add a 2 or a 4 to any one of the empty tiles
 	const [i, j] = emptyCells[getRandomInt(emptyCells.length)]
 	grid[i][j] = Math.random() < 0.9 ? 2 : 4
-	
+
 	return grid
 
 };
@@ -108,12 +123,12 @@ function rotateGrid(grid) {
 function mergeGrid(grid) {
 
 	let moved = false;
-	
+
 	const newGrid = grid.map(row => {
-	
+
 		// Get non-zere tiles
 		const newRow = row.filter(tile => tile !== 0);
-	
+
 		for (let i = 0; i < newRow.length - 1; i++) {
 			if (newRow[i] === newRow[i + 1]) {
 				newRow[i] *= 2;
@@ -125,7 +140,7 @@ function mergeGrid(grid) {
 		// pad empty tiles to make a 4 tiles long row
 		const finalRow = newRow.filter(val => val !== 0);
 		while (finalRow.length < SIZE) finalRow.push(0);
-		
+
 		if (!moved) {
 			for (let i = 0; i < SIZE; i++) {
 				// Check at least if any anything move if nothing merged
@@ -135,21 +150,29 @@ function mergeGrid(grid) {
 				}
 			}
 		}
-	
+
 		return finalRow;
-	
+
 	});
 
 	return { newGrid, moved }
 
 }
 
+function initGameState() {
+	return addRandomTile(addRandomTile(getEmptyGrid()))
+}
 export function Game2048() {
 
-	const [grid, setGrid] = useState(() => addRandomTile(addRandomTile(getEmptyGrid())));
+	const [grid, setGrid] = useState(initGameState());
 	const [gameOver, setGameOver] = useState(false);
 
+	function onRestartClick(){
+		setGrid(initGameState())
+	}
+
 	const handleKeyDown = (e) => {
+
 		if (gameOver) return;
 
 		let rotated = false;
@@ -187,15 +210,15 @@ export function Game2048() {
 			// check if any more moves are left
 			const canMove = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].some(dir => {
 				let testGrid = cloneGrid(grid);
-				
+
 				if (dir === "ArrowUp") testGrid = rotateGrid(rotateGrid(rotateGrid(testGrid)));
 				if (dir === "ArrowDown") testGrid = rotateGrid(testGrid);
 				if (dir === "ArrowRight") testGrid = rotateGrid(rotateGrid(testGrid));
-				
+
 				const { moved: canMove } = mergeGrid(testGrid);
-				
+
 				return canMove;
-			
+
 			});
 			if (!canMove) setGameOver(true);
 		}
@@ -225,8 +248,11 @@ export function Game2048() {
 
 	return (
 		<div style={styles.container}>
+
 			<h1 style={styles.title}>2048 Game by Paramvir Singh</h1>
+			
 			{gameOver && <h2 style={styles.gameOver}>Game Over!</h2>}
+			
 			<table style={styles.table}>
 				<tbody>
 					{grid.map((row, i) => (
@@ -240,6 +266,9 @@ export function Game2048() {
 					))}
 				</tbody>
 			</table>
+
+			<button style={styles.button} onClick={onRestartClick}>Restart</button>
+
 		</div>
 	);
 }
